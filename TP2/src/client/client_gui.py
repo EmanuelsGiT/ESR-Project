@@ -14,6 +14,7 @@ class ClientWindow(QMainWindow):
     def __init__(
             self,
             file_name: str,
+            client_address: str,
             host_address: str,
             host_port: int,
             rtp_port: int,
@@ -26,7 +27,7 @@ class ClientWindow(QMainWindow):
         self.tear_button = QPushButton()
         self.error_label = QLabel()
 
-        self._media_client = Client(file_name, host_address, host_port, rtp_port)
+        self._media_client = Client(file_name, client_address, host_address, host_port, rtp_port)
         self._update_image_signal.connect(self.update_image)
         self._update_image_timer = QTimer()
         self._update_image_timer.timeout.connect(self._update_image_signal.emit)

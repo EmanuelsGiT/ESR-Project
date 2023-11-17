@@ -5,10 +5,11 @@ if __name__ == '__main__':
     import sys
 
     if len(sys.argv) != 3:
-        #print(f"Usage: {sys.argv[0].split('/')[-1]} <port>")
+        print(f"Usage: {sys.argv[0].split('/')[-1]} <host> <port>")
         exit(-1)
     try:
         host = sys.argv[1]
+        print("host = " + host)
         port = int(sys.argv[2])
     except ValueError:
         raise ValueError('host/port value should be integer')

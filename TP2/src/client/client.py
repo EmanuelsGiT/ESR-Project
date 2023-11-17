@@ -14,7 +14,7 @@ class Client:
     DEFAULT_CHUNK_SIZE = 4096
     DEFAULT_RECV_DELAY = 20  # in milliseconds
 
-    DEFAULT_LOCAL_HOST = '127.0.0.1'
+    #DEFAULT_LOCAL_HOST = '10.0.0.20'
 
     RTP_SOFT_TIMEOUT = 5  # in milliseconds
     # for allowing simulated non-blocking operations
@@ -27,6 +27,7 @@ class Client:
     def __init__(
             self,
             file_path: str,
+            client_address: str,
             remote_host_address: str,
             remote_host_port: int,
             rtp_port: int):
@@ -43,9 +44,12 @@ class Client:
         self.is_receiving_rtp = False
 
         self.file_path = file_path
+        self.client_address = client_address
         self.remote_host_address = remote_host_address
         self.remote_host_port = remote_host_port
         self.rtp_port = rtp_port
+
+        print("remote host address =" + remote_host_address)
 
     def get_next_frame(self) -> Optional[Tuple[Image.Image, int]]:
         if self._frame_buffer:
@@ -81,7 +85,7 @@ class Client:
 
     def _handle_video_receive(self):
         self._rtp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._rtp_socket.bind((self.DEFAULT_LOCAL_HOST, self.rtp_port))
+        self._rtp_socket.bind((self.client_address, self.rtp_port))
         self._rtp_socket.settimeout(self.RTP_SOFT_TIMEOUT / 1000.)
         while True:
             if not self.is_receiving_rtp:
