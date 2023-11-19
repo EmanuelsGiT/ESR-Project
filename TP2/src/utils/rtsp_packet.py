@@ -9,6 +9,8 @@ class InvalidRTSPRequest(Exception):
 class RTSPPacket:
     RTSP_VERSION = 'RTSP/1.0'
 
+    HELLO = "HELLO"
+    HELLORESPONSE = "HELLORESPONSE"
     INVALID = -1
     SETUP = 'SETUP'
     PLAY = 'PLAY'
