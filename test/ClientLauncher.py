@@ -45,7 +45,7 @@ class ClientLauncher:
             self.neighbour = neighbours[0]
 
     def launch_client(self):
-        app = QApplication() #sys.argv ????
+        app = QApplication(sys.argv)# ????
         client = Client(self.neighbour,self.UDPServerSocket)
         client.resize(400, 300)
         client.show()

@@ -4,6 +4,9 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import pyqtSignal, QTimer
 from PIL.ImageQt import ImageQt
 
+from PIL import Image
+from io import BytesIO
+
 import socket, threading, os
 
 from RtpPacket import RtpPacket
@@ -29,10 +32,10 @@ class Client(QMainWindow):
 	PAUSE = 'PAUSE'
 	TEARDOWN = 'TEARDOWN'
 
-	def __init__(self, serverAddress,rtspSocket):
+	def __init__(self, serverAddress,rtspSocket,parent=None):
 		"""Client initialization"""
 		#self.master.protocol("WM_DELETE_WINDOW", self.handler)
-		self.createWidgets()
+		super(Client, self).__init__(parent)
 		self.rtspAddressPort = (serverAddress, OLY_PORT)
 		self.rtspSocket = rtspSocket
 		self.rtspSeq = 0
@@ -41,11 +44,13 @@ class Client(QMainWindow):
 		self.frameNbr = 0
 
 		self.video_player = QLabel()
-        self.setup_button = QPushButton()
-        self.play_button = QPushButton()
-        self.pause_button = QPushButton()
-        self.tear_button = QPushButton()
-        self.error_label = QLabel()
+		self.setup_button = QPushButton()
+		self.play_button = QPushButton()
+		self.pause_button = QPushButton()
+		self.tear_button = QPushButton()
+		self.error_label = QLabel()
+		
+		self.createWidgets()
 
 	def createWidgets(self):
 		"""Build GUI."""
@@ -54,45 +59,45 @@ class Client(QMainWindow):
 
 		# Create Setup button
 		self.setup_button.setEnabled(True)
-        self.setup_button.setText('Setup')
-        self.setup_button.clicked.connect(self.setupMovie)
+		self.setup_button.setText('Setup')
+		self.setup_button.clicked.connect(self.setupMovie)
 
 		# Create Play button
-		self.play_button.setEnabled(False)
-        self.play_button.setText('Play')
-        self.play_button.clicked.connect(self.playMovie)
+		self.play_button.setEnabled(True)
+		self.play_button.setText('Play')
+		self.play_button.clicked.connect(self.playMovie)
 
 		# Create Pause button
-		self.pause_button.setEnabled(False)
-        self.pause_button.setText('Pause')
-        self.pause_button.clicked.connect(self.pauseMovie)
+		self.pause_button.setEnabled(True)
+		self.pause_button.setText('Pause')
+		self.pause_button.clicked.connect(self.pauseMovie)
 
 		# Create Teardown button
-		self.tear_button.setEnabled(False)
-        self.tear_button.setText('Teardown')
-        self.tear_button.clicked.connect(self.exitClient)
+		self.tear_button.setEnabled(True)
+		self.tear_button.setText('Teardown')
+		self.tear_button.clicked.connect(self.exitClient)
 
 
 		self.error_label.setSizePolicy(
-            QSizePolicy.Preferred,
-            QSizePolicy.Maximum)
+			QSizePolicy.Preferred,
+			QSizePolicy.Maximum)
 
-        central_widget = QWidget(self)
-        self.setCentralWidget(central_widget)
+		central_widget = QWidget(self)
+		self.setCentralWidget(central_widget)
 
-        control_layout = QHBoxLayout()
-        control_layout.setContentsMargins(0, 0, 0, 0)
-        control_layout.addWidget(self.setup_button)
-        control_layout.addWidget(self.play_button)
-        control_layout.addWidget(self.pause_button)
-        control_layout.addWidget(self.tear_button)
+		control_layout = QHBoxLayout()
+		control_layout.setContentsMargins(0, 0, 0, 0)
+		control_layout.addWidget(self.setup_button)
+		control_layout.addWidget(self.play_button)
+		control_layout.addWidget(self.pause_button)
+		control_layout.addWidget(self.tear_button)
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.video_player)
-        layout.addLayout(control_layout)
-        layout.addWidget(self.error_label)
+		layout = QVBoxLayout()
+		layout.addWidget(self.video_player)
+		layout.addLayout(control_layout)
+		layout.addWidget(self.error_label)
 
-        central_widget.setLayout(layout)
+		central_widget.setLayout(layout)
 
 	def setupMovie(self):
 		"""Setup button handler."""
@@ -152,7 +157,7 @@ class Client(QMainWindow):
 
 	def updateMovie(self, frame):
 		"""Update the image file as video frame in the GUI."""
-		pix = QPixmap.fromImage(ImageQt(frame).copy())
+		pix = QPixmap.fromImage(ImageQt(Image.open(BytesIO(frame))).copy())
 		self.video_player.setPixmap(pix)
 
 	def sendRtspRequest(self, requestCode):
