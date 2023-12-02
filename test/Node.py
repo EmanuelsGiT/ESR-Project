@@ -19,25 +19,21 @@ VALIDATE_TIME = timedelta(seconds = 10)
 class Route:
     def __init__(self,source,saltos,delta, time):
         self.source = source
-        self.saltos = saltos
         self.delta = delta
         self.time = datetime.combine(date.today(), time)
 
     def update_route(self,source,saltos,delta, time):
-        difSaltos = self.saltos - saltos
         difTime = time - self.time
         difDelta = delta - self.delta
         #Dá update à rota se:
             #O tempo de validade tiver expirado, ou
-            #Houver redução de saltos e tiver melhora de tempo, ou
             #Tiver melhora de tempo significativa (MIN_DELTA)
-        if(difTime >= VALIDATE_TIME or (difDelta >= ZERO_DELTA and difSaltos > 0) or difDelta > MIN_DELTA): #Ou recebe uma rota melhor ou o rota expirou
+        if(difTime >= VALIDATE_TIME  or difDelta > MIN_DELTA): #Ou recebe uma rota melhor ou o rota expirou
             self.delta = delta
             self.source = source
-            self.saltos = saltos
             self.time = time
             return True
-        return False        
+        return False
 
 class Node:
 
@@ -49,15 +45,18 @@ class Node:
     PAUSE = "PAUSE"
     TEARDOWN = "TEARDOWN"
 
-    def __init__(self, bootstrapperAddressPort):
+    def __init__(self, bootstrapperAddressPort, isRp):
         self.bootstrapperAddressPort = bootstrapperAddressPort
+        self.rp = ""
+        self.isRp = isRp
         self.neighbours = []
-        self.streamsTable = StreamsTable()
-        self.route = Route("",0,MAX_DELTA, datetime.now().time())
+        self.streamsTable = StreamsTable() 
         self.lock = Lock()
 
     def run(self):
         print("--------------Node--------------")
+        if self.isRp:
+            self.route = Route("",0,MAX_DELTA, datetime.now().time())
         Thread(target=self.service_RTP).start()
         Thread(target=self.service_OLY).start()
 
@@ -75,9 +74,9 @@ class Node:
             print(Packet.payload)
 
             data = Packet.payload
+            self.rp = data[-1]
             self.neighbours = data[:-1]
-            self.ip = data[-1]
-
+            self.ip = data[-2]
         # Pacote de proba
         elif Packet.type==self.PROBE:
             now = datetime.now()
@@ -85,8 +84,6 @@ class Node:
             # Timestamp marcado no servidor
             timestamp = datetime.strptime(Packet.payload[0], '%H:%M:%S.%f').time()
             delta = datetime.combine(date.today(), now) - datetime.combine(date.today(), timestamp)
-            # Número de saltos do servidor até o nodo atual
-            saltos = int(Packet.payload[1]) + 1
 
             # IP de quem enviou pacote de probe
             probeSource = Packet.payload[2]
@@ -111,19 +108,9 @@ class Node:
                     TDNPacket = TDNPacket.encode("TEARDOWN", [])
                     self.olyClientSocket.sendto(TDNPacket,(old_source,OLY_PORT))
 
-                # Data a enviar aos nodos viznhos
-                data = [timestamp,saltos,self.ip]
-
-                ProbePacket = OlyPacket()
-                ProbePacket = ProbePacket.encode("PROBE",data)
-                # O nodo envia mensagem de proba a todos os seus vizinhos ativos
-                for neighbour in self.neighbours:
-                    #print("NodeIP: " + elem + " | SOURCEIP: " + source_ip)
-                    if neighbour != probeSource:
-                        self.olyClientSocket.sendto(ProbePacket,(neighbour,OLY_PORT))
             self.lock.release()
         else:
-            destination = self.route.source
+            destination = self.rp
 
             if Packet.type==self.SETUP:
                 print("Criei novo fluxo | destination: " + source)

@@ -7,6 +7,7 @@ class OverlayTable:
     @classmethod
     def __init__(self):
         self.groups = []
+        self.rp = ""
         self.lock = Lock()
 
     @classmethod
@@ -37,6 +38,8 @@ class OverlayTable:
             line = line.strip()
             if line == "":
                 continue
+            if line[0] == 'R':
+                self.rp = line[3:]
             elif line[0]=='#':
                 if neighbours != []:
                     self.add_group(ip,neighbours)
@@ -81,6 +84,7 @@ class Bootstrapper:
             neighbours = self.overlayTable.get_neighbours(ip)
             data = neighbours
             data.append(ip)
+            data.append(self.overlayTable.rp)
 
             HelloResponsePack = OlyPacket()
             HelloResponsePack = HelloResponsePack.encode(self.HELLORESPONSE,data)

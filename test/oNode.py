@@ -28,7 +28,14 @@ if __name__ == "__main__":
         elif args[0]=="-n":
             # Adicionar novo nodo à overlay:
             # oNode -n <bootstrapper_adress>
-            node = Node(bootstrapperAdressPort)
+            isRp = False
+            node = Node(bootstrapperAdressPort, isRp)
+            node.run()
+        elif args[0]=="-rp":
+            # Adicionar novo nodo à overlay:
+            # oNode -n <bootstrapper_adress>
+            isRp = True
+            node = Node(bootstrapperAdressPort, isRp)
             node.run()
         else: 
             print("ERROR")

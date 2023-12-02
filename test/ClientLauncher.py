@@ -41,7 +41,7 @@ class ClientLauncher:
             print(HelloPacket.payload)
             # O payload é os vizinhos do nodo
             data = HelloPacket.payload
-            neighbours = data[:-1]
+            neighbours = data[:-2]
             self.neighbour = neighbours[0]
 
     def launch_client(self):

@@ -28,11 +28,11 @@ class ServerWorker:
 	FILE_NOT_FOUND_404 = 1
 	CON_ERR_500 = 2
 
-	def __init__(self,clientAddress, filename, olySocket):
+	def __init__(self,rpAddress, filename, olySocket):
 		"""Server Worker initialization"""
 		self.clientInfo = {}
 		# Endereço e porta de atendimento do vizinho do servidor
-		self.clientAddressPort = (clientAddress,RTP_PORT)
+		self.rpAddressPort = (rpAddress,RTP_PORT)
 		try:
 			self.clientInfo['videoStream'] = VideoStream(filename)
 		except IOError:
@@ -98,7 +98,7 @@ class ServerWorker:
 				frameNumber = self.clientInfo['videoStream'].frameNbr()
 				try:
 					if self.state == self.PLAYING:
-						self.clientInfo['rtpSocket'].sendto(self.makeRtp(data, frameNumber),self.clientAddressPort)
+						self.clientInfo['rtpSocket'].sendto(self.makeRtp(data, frameNumber),self.rpAddressPort)
 				except Exception as e:
 					print("Connection Error")
 					print(e)
