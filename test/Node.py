@@ -17,12 +17,12 @@ ZERO_DELTA = timedelta(microseconds = 1)
 VALIDATE_TIME = timedelta(seconds = 10)
 
 class Route:
-    def __init__(self,source,saltos,delta, time):
+    def __init__(self,source,delta, time):
         self.source = source
         self.delta = delta
         self.time = datetime.combine(date.today(), time)
 
-    def update_route(self,source,saltos,delta, time):
+    def update_route(self,source,delta, time):
         difTime = time - self.time
         difDelta = delta - self.delta
         #Dá update à rota se:
@@ -56,7 +56,7 @@ class Node:
     def run(self):
         print("--------------Node--------------")
         if self.isRp:
-            self.route = Route("",0,MAX_DELTA, datetime.now().time())
+            self.route = Route("",MAX_DELTA, datetime.now().time())
         Thread(target=self.service_RTP).start()
         Thread(target=self.service_OLY).start()
 
@@ -86,11 +86,11 @@ class Node:
             delta = datetime.combine(date.today(), now) - datetime.combine(date.today(), timestamp)
 
             # IP de quem enviou pacote de probe
-            probeSource = Packet.payload[2]
+            probeSource = Packet.payload[1]
 
             self.lock.acquire()
             old_source = self.route.source
-            updated = self.route.update_route(probeSource, saltos, delta, datetime.combine(date.today(), now))
+            updated = self.route.update_route(probeSource, delta, datetime.combine(date.today(), now))
             new_source = self.route.source
             if(updated):
                 print("Updated Route")
@@ -110,7 +110,10 @@ class Node:
 
             self.lock.release()
         else:
-            destination = self.rp
+            if self.isRp:
+                destination = self.route.source
+            else:
+                destination = self.rp
 
             if Packet.type==self.SETUP:
                 print("Criei novo fluxo | destination: " + source)
