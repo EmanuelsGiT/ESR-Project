@@ -44,10 +44,10 @@ if __name__ == "__main__":
         if args[0]=="-s":
             bootstrapperAdress = args[1]
             bootstrapperAdressPort = (bootstrapperAdress,OLY_PORT)
-            filename = args[2]
+            movies = args[2:]
             # Adicionar novo server à overlay:
             # oNode -s <bootstrapper_adress>
-            server = ServerLauncher(bootstrapperAdressPort, filename)
+            server = ServerLauncher(bootstrapperAdressPort, movies)
             server.run()
         else:
              print("ERROR")

@@ -18,12 +18,12 @@ class ServerLauncher:
     HELLO = "HELLO"
     HELLORESPONSE = "HELLORESPONSE"
 
-    def __init__(self, bootstrapperAddressPort, filename):
+    def __init__(self, bootstrapperAddressPort, movies):
         self.bootstrapperAddressPort = bootstrapperAddressPort
         self.UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self.UDPServerSocket.bind(('',OLY_PORT))
         self.UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        self.filename = filename
+        self.movies = movies
         self.rp = ""
         self.ip = ""
 
@@ -41,7 +41,7 @@ class ServerLauncher:
             ProbePacket = ProbePacket.encode(self.PROBE,data)
             print("Mensagem de proba enviada")
 
-            # Envia mensagem de proba para o vizinho (o servidor só tem um vizinho)
+            # Envia mensagem de proba para o rp
             self.UDPClientSocket.sendto(ProbePacket,(self.rp,OLY_PORT))
             time.sleep(PERIODIC_MONITORIZATION_TIME)
     
@@ -53,11 +53,16 @@ class ServerLauncher:
         if HRPacket.type == self.HELLORESPONSE:
             # Recebe RP do bootstrapper
             data = HRPacket.payload
+            print("data ") 
+            print(data)
             neighbours = data[:-1]
-            self.rp = neighbours[-1]
-            self.ip = data[-2]
-
+            print("neigh ")
+            print(neighbours)
+            self.rp = data[-1]
+            self.ip = neighbours[-1]
             print("RP: " + self.rp)
+            print("ip= " + self.ip)
+
         else:
             print("ERROR")
 
@@ -70,4 +75,4 @@ class ServerLauncher:
         Thread(target=self.send_probe_packet).start() 
 
         #Start Server Worker
-        ServerWorker(self.rp, self.filename, self.UDPServerSocket).run()
+        ServerWorker(self.rp, self.movies[0], self.UDPServerSocket).run()
