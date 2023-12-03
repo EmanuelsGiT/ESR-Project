@@ -1,10 +1,10 @@
 from threading import Thread
 import sys
-#from Node import *
-from server.__init__ import *
-from client.__init__ import *
-from bootstrapper import *
-from utils.rtsp_packet import *
+from Node import *
+from ServerLauncher import *
+from ClientLauncher import *
+from Bootstrapper import *
+from OlyPacket import *
 
 
 if __name__ == "__main__":
@@ -20,16 +20,18 @@ if __name__ == "__main__":
             print("------------Bootstrapper------------")
             bootstrapper = Bootstrapper(args[1])
             bootstrapper.run()
-        elif args[0]=="-c":
-            # Adicionar novo cliente à overlay:
-            # oNode -c <bootstrapper_adress>
-            client = ClientLauncher(bootstrapperAdressPort)
-            client.run()
-        #elif args[0]=="-n":
-        #    # Adicionar novo nodo à overlay:
-        #    # oNode -n <bootstrapper_adress>
-        #    node = Node(bootstrapperAdressPort)
-        #    node.run()
+        elif args[0]=="-n":
+            # Adicionar novo nodo à overlay:
+            # oNode -n <bootstrapper_adress>
+            isRp = False
+            node = Node(bootstrapperAdressPort, isRp)
+            node.run()
+        elif args[0]=="-rp":
+            # Adicionar novo nodo à overlay:
+            # oNode -n <bootstrapper_adress>
+            isRp = True
+            node = Node(bootstrapperAdressPort, isRp)
+            node.run()
         else: 
             print("ERROR")
 
@@ -37,11 +39,19 @@ if __name__ == "__main__":
         if args[0]=="-s":
             bootstrapperAdress = args[1]
             bootstrapperAdressPort = (bootstrapperAdress,OLY_PORT)
-            filename = args[2]
+            movies = args[2:]
             # Adicionar novo server à overlay:
             # oNode -s <bootstrapper_adress>
-            server = ServerLauncher(bootstrapperAdressPort, filename)
+            server = ServerLauncher(bootstrapperAdressPort, movies)
             server.run()
+        elif args[0]=="-c":
+            bootstrapperAdress = args[1]
+            bootstrapperAdressPort = (bootstrapperAdress,OLY_PORT)
+            # Adicionar novo cliente à overlay:
+            # oNode -c <bootstrapper_adress>
+            movie = args[2]
+            client = ClientLauncher(bootstrapperAdressPort, movie)
+            client.run()
         else:
              print("ERROR")
 

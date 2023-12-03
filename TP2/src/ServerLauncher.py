@@ -3,9 +3,9 @@ from datetime import datetime
 
 import time
 from threading import Thread
-from utils.rtsp_packet import *
+from OlyPacket import OlyPacket
 from ServerWorker import ServerWorker
-from bootstrapper import Bootstrapper
+from Bootstrapper import Bootstrapper
 
 OLY_BUFFER_SIZE = 250
 OLY_PORT = 5555
@@ -18,13 +18,13 @@ class ServerLauncher:
     HELLO = "HELLO"
     HELLORESPONSE = "HELLORESPONSE"
 
-    def __init__(self, bootstrapperAddressPort, filename):
+    def __init__(self, bootstrapperAddressPort, movies):
         self.bootstrapperAddressPort = bootstrapperAddressPort
         self.UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self.UDPServerSocket.bind(('',OLY_PORT))
         self.UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        self.filename = filename
-        self.neighbour = ""
+        self.movies = movies
+        self.rp = ""
         self.ip = ""
 
     def send_hello_packet(self):
@@ -37,13 +37,12 @@ class ServerLauncher:
             # Cria mensagem de proba
             ProbePacket = OlyPacket()
             timestamp = datetime.now().strftime('%H:%M:%S.%f')
-            saltos = 0
-            data = [timestamp,saltos,self.ip]
+            data = [timestamp,self.ip]
             ProbePacket = ProbePacket.encode(self.PROBE,data)
             print("Mensagem de proba enviada")
 
-            # Envia mensagem de proba para o vizinho (o servidor só tem um vizinho)
-            self.UDPClientSocket.sendto(ProbePacket,(self.neighbour,OLY_PORT))
+            # Envia mensagem de proba para o rp
+            self.UDPClientSocket.sendto(ProbePacket,(self.rp,OLY_PORT))
             time.sleep(PERIODIC_MONITORIZATION_TIME)
     
     def receive_hello_packet(self):
@@ -52,13 +51,12 @@ class ServerLauncher:
         HRPacket = OlyPacket()
         HRPacket = HRPacket.decode(msg)
         if HRPacket.type == self.HELLORESPONSE:
-            # Recebe vizinhos do bootstrapper
+            # Recebe RP do bootstrapper
             data = HRPacket.payload
             neighbours = data[:-1]
-            self.neighbour = neighbours[0]
-            self.ip = data[-1]
+            self.rp = data[-1]
+            self.ip = neighbours[-1]
 
-            print("Vizinho: " + self.neighbour)
         else:
             print("ERROR")
 
@@ -70,5 +68,5 @@ class ServerLauncher:
         #Monitorização periódica
         Thread(target=self.send_probe_packet).start() 
 
-        #Start Server Worker
-        ServerWorker(self.neighbour, self.filename, self.UDPServerSocket).run()
+        #Start Server Workers
+        ServerWorker(self.rp, self.movies[0], self.UDPServerSocket).run()

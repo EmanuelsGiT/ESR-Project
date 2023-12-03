@@ -217,6 +217,8 @@ class Client(QMainWindow):
 		data = [self.movie]
 		data.append(self.ip)
 		request = request.encode(type_request,data)
+		print("req clie")
+		print(request)
 
 		# Send the RTSP request using rtspSocket.
 		self.rtspSocket.sendto(request,self.rtspAddressPort)

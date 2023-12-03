@@ -117,13 +117,14 @@ class Node:
 
             data = Packet.payload
             movie = data[0]
-            source_ip = data[1]
+            #source_ip = data
             route = data[1:]
             route.append(self.ip)
 
             oly = OlyPacket()
-            new_data = [movie]
-            new_data.append(route)
+            new_data = data
+            if not self.isRp:
+                new_data.append(self.ip)
             
 
             if Packet.type==self.SETUP:
@@ -193,7 +194,7 @@ class Node:
         self.lock.acquire()
         for stream in openStreams:
             #print("Redirecionei pacote de stream " + source_ip + " -> " + stream.source)
-            self.rtpClientSocket.sendto(data,(stream.destination,RTP_PORT))
+            self.rtpClientSocket.sendto(data,(stream.destination_route[-2],RTP_PORT))
         self.lock.release()
 
 
