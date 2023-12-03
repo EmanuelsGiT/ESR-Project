@@ -2,8 +2,10 @@ from threading import Lock
 
 # Stream, guarda detalhes de um fluxo de stream
 class Stream:
-    def __init__(self,destination):
+    def __init__(self,movie,destination,destination_route):
+        self.movie = ""
         self.destination = destination
+        self.destination_route = destination_route
         self.state = "closed"
 
 
@@ -30,10 +32,10 @@ class StreamsTable:
         finally:
             self.lock.release()
 
-    def add_stream(self,destination):
+    def add_stream(self,movie,destination,destination_route):
         self.lock.acquire()
         try:
-            self.streams.append(Stream(destination))
+            self.streams.append(Stream(movie,destination,destination_route))
         finally:
             self.lock.release()
 
