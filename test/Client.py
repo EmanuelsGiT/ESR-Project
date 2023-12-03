@@ -31,11 +31,13 @@ class Client(QMainWindow):
 	PLAY = 'PLAY'
 	PAUSE = 'PAUSE'
 	TEARDOWN = 'TEARDOWN'
-
-	def __init__(self, serverAddress,rtspSocket,parent=None):
+	# ip = client, server adress no vizinho
+	def __init__(self, movie, ip, serverAddress,rtspSocket,parent=None):
 		"""Client initialization"""
 		#self.master.protocol("WM_DELETE_WINDOW", self.handler)
 		super(Client, self).__init__(parent)
+		self.ip = ip
+		self.movie = movie
 		self.rtspAddressPort = (serverAddress, OLY_PORT)
 		self.rtspSocket = rtspSocket
 		self.rtspSeq = 0
@@ -212,7 +214,9 @@ class Client(QMainWindow):
 
 
 		request = OlyPacket()
-		request = request.encode(type_request, {})
+		data = [self.movie]
+		data.append(self.ip)
+		request = request.encode(type_request,data)
 
 		# Send the RTSP request using rtspSocket.
 		self.rtspSocket.sendto(request,self.rtspAddressPort)

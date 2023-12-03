@@ -113,7 +113,18 @@ class Node:
             if self.isRp:
                 destination = self.route.source
             else:
-                destination = self.rp
+                destination = self.neighbours[0]
+
+            data = Packet.payload
+            movie = data[0]
+            source_ip = data[1]
+            route = data[1:]
+            route.append(self.ip)
+
+            oly = OlyPacket()
+            new_data = [movie]
+            new_data.append(route)
+            
 
             if Packet.type==self.SETUP:
                 print("Criei novo fluxo | destination: " + source)
@@ -121,10 +132,11 @@ class Node:
                 # Preciso implementar mensagens de proba para conseguirmos saber isto
                 # Adicionar um fluxo à routing table falta passar o dest (novo vizinho a qual o novo atual passa stream)
                 firstStream = self.streamsTable.is_empty()
-                self.streamsTable.add_stream(source) #o destino da stream é a source de quem fez o pedido
+                self.streamsTable.add_stream(movie, route[0], route) #o destino da stream é a source de quem fez o pedido
 
                 if(firstStream):
-                    self.olyClientSocket.sendto(msg,(destination,OLY_PORT))
+                    oly = oly.encode(Packet.type, new_data)
+                    self.olyClientSocket.sendto(oly,(destination,OLY_PORT))
                     print("sending SETUP to " + destination)
                 self.lock.release()
 
@@ -132,11 +144,12 @@ class Node:
                 print("Fluxo ativo | destination: " + source)
                 self.lock.acquire()
                 oldStatus = self.streamsTable.stream_table_status()
-                self.streamsTable.open_stream(source)
+                self.streamsTable.open_stream(route[0])
                 newStatus = self.streamsTable.stream_table_status()
 
                 if(oldStatus != newStatus):
-                    self.olyClientSocket.sendto(msg,(destination,OLY_PORT))
+                    oly = oly.encode(Packet.type, new_data)
+                    self.olyClientSocket.sendto(oly,(destination,OLY_PORT))
                     print("sending PLAY to " + destination)
                 self.lock.release()
 
@@ -145,11 +158,12 @@ class Node:
                 self.lock.acquire()
                 # Fecha o fluxo pois o nodo vizinhos(source_ip) não quer stream
                 oldStatus = self.streamsTable.stream_table_status()
-                self.streamsTable.close_stream(source)
+                self.streamsTable.close_stream(route[0])
                 newStatus = self.streamsTable.stream_table_status()
 
                 if(oldStatus != newStatus):
-                    self.olyClientSocket.sendto(msg,(destination,OLY_PORT))
+                    oly = oly.encode(Packet.type, new_data)
+                    self.olyClientSocket.sendto(oly,(destination,OLY_PORT))
                 self.lock.release()
 
             elif Packet.type == self.TEARDOWN:
@@ -159,16 +173,17 @@ class Node:
 
                 oldStatus = self.streamsTable.stream_table_status()
                 # Remover fluxo da tabela de rotas
-                self.streamsTable.delete_stream(source)
+                self.streamsTable.delete_stream(route[0])
                 newStatus = self.streamsTable.stream_table_status()
 
                 empty = self.streamsTable.is_empty()
 
                 if(empty):
-                    self.olyClientSocket.sendto(msg,(destination,OLY_PORT))
+                    oly = oly.encode(Packet.type, new_data)
+                    self.olyClientSocket.sendto(oly,(destination,OLY_PORT))
                 elif(oldStatus != newStatus):
-                    msg = Packet.encode(self.PAUSE,[])
-                    self.olyClientSocket.sendto(msg,(destination,OLY_PORT))
+                    oly = oly.encode(self.PAUSE, new_data)
+                    self.olyClientSocket.sendto(oly,(destination,OLY_PORT))
                 self.lock.release()
 
 

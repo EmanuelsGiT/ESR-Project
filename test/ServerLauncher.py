@@ -74,5 +74,5 @@ class ServerLauncher:
         #Monitorização periódica
         Thread(target=self.send_probe_packet).start() 
 
-        #Start Server Worker
+        #Start Server Workers
         ServerWorker(self.rp, self.movies[0], self.UDPServerSocket).run()

@@ -20,11 +20,6 @@ if __name__ == "__main__":
             print("------------Bootstrapper------------")
             bootstrapper = Bootstrapper(args[1])
             bootstrapper.run()
-        elif args[0]=="-c":
-            # Adicionar novo cliente à overlay:
-            # oNode -c <bootstrapper_adress>
-            client = ClientLauncher(bootstrapperAdressPort)
-            client.run()
         elif args[0]=="-n":
             # Adicionar novo nodo à overlay:
             # oNode -n <bootstrapper_adress>
@@ -49,6 +44,14 @@ if __name__ == "__main__":
             # oNode -s <bootstrapper_adress>
             server = ServerLauncher(bootstrapperAdressPort, movies)
             server.run()
+        elif args[0]=="-c":
+            bootstrapperAdress = args[1]
+            bootstrapperAdressPort = (bootstrapperAdress,OLY_PORT)
+            # Adicionar novo cliente à overlay:
+            # oNode -c <bootstrapper_adress>
+            movie = args[2]
+            client = ClientLauncher(bootstrapperAdressPort, movie)
+            client.run()
         else:
              print("ERROR")
 
