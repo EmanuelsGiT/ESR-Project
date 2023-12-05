@@ -1,7 +1,7 @@
 from random import randint
 import sys, traceback, threading, socket
 
-from OlyPacket import OlyPacket
+from RtspPacket import RtspPacket
 from VideoStream import VideoStream
 from RtpPacket import RtpPacket
 
@@ -19,14 +19,14 @@ class ServerWorker:
 	state = INIT
 
 	# Buffer
-	OLY_BUFFER_SIZE = 250
+	RTSP_BUFFER_SIZE = 250
 
 	#Sucess/Error codes
 	OK_200 = 0
 	FILE_NOT_FOUND_404 = 1
 	CON_ERR_500 = 2
 
-	def __init__(self,rpAddress, filename, olySocket, RTPPORT):
+	def __init__(self,rpAddress, filename, rtspSocket, RTPPORT):
 		"""Server Worker initialization"""
 		self.clientInfo = {}
 		self.RTPPORT = RTPPORT
@@ -36,7 +36,7 @@ class ServerWorker:
 			self.clientInfo['videoStream'] = VideoStream(filename)
 		except IOError:
 			print("FILE_NOT_FOUND_404")
-		self.clientInfo["olySocket"] = olySocket
+		self.clientInfo["rtspSocket"] = rtspSocket
 
 	def run(self):
 		"""Server Worker into a thread"""
@@ -49,11 +49,11 @@ class ServerWorker:
 
 	def recvRtspRequest(self):
 		"""Receive RTSP request from the client."""
-		connSocket = self.clientInfo['olySocket']
+		connSocket = self.clientInfo['rtspSocket']
 		while True:
-			data = connSocket.recvfrom(self.OLY_BUFFER_SIZE)
+			data = connSocket.recvfrom(self.RTSP_BUFFER_SIZE)
 			if data:
-				request = OlyPacket()
+				request = RtspPacket()
 				request = request.decode(data[0])
 				print("Data received:\n" + request.type)
 				self.processRtspRequest(request)

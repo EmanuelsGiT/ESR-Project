@@ -10,10 +10,10 @@ from io import BytesIO
 import socket, threading, os
 
 from RtpPacket import RtpPacket
-from OlyPacket import OlyPacket
+from RtspPacket import RtspPacket
 
 #RTP_PORT = 9999
-#OLY_PORT = 5555
+#RTSP_PORT = 5555
 RTP_BUFFER_SIZE = 20480
 
 class Client(QMainWindow):
@@ -32,13 +32,13 @@ class Client(QMainWindow):
 	PAUSE = 'PAUSE'
 	TEARDOWN = 'TEARDOWN'
 	# ip = client, server adress no vizinho
-	def __init__(self, oly_port, port, ip, serverAddress,rtspSocket,parent=None):
+	def __init__(self, rtsp_port, port, ip, serverAddress,rtspSocket,parent=None):
 		"""Client initialization"""
 		#self.master.protocol("WM_DELETE_WINDOW", self.handler)
 		super(Client, self).__init__(parent)
 		self.ip = ip
 		self.port = int(port)
-		self.rtspAddressPort = (serverAddress, int(oly_port))
+		self.rtspAddressPort = (serverAddress, int(rtsp_port))
 		self.rtspSocket = rtspSocket
 		self.rtspSeq = 0
 		self.requestSent = -1
@@ -213,7 +213,7 @@ class Client(QMainWindow):
 			self.requestSent = self.TEARDOWN
 
 
-		request = OlyPacket()
+		request = RtspPacket()
 		data = [self.port]
 		data.append(self.ip)
 		request = request.encode(type_request,data)

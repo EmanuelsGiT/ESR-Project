@@ -1,7 +1,7 @@
 # Packet de comunicação de rede overlay
 """
-OlyPacket implementa mensagens de controlo da rede overlay. As mensagens são em formato string, e os seus campos
-são de parados por ';'. Um Olypacket tem um tamanho fixo de 250 bytes.
+RtspPacket implementa mensagens de controlo da rede overlay. As mensagens são em formato string, e os seus campos
+são de parados por ';'. Um Rtsppacket tem um tamanho fixo de 250 bytes.
 
 TYPE:
     HELLO -> Hello packet, pacote de registo no bootstrapper
@@ -17,10 +17,10 @@ pelo caracter ",".
 
 """
 
-OLY_BUFFER_SIZE = 250
-OLY_PORT = 5555
+RTSP_BUFFER_SIZE = 250
+RTSP_PORT = 5555
 
-class OlyPacket:
+class RtspPacket:
 
     def __init__(self):
         pass

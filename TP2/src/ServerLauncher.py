@@ -3,12 +3,12 @@ from datetime import datetime
 
 import time
 from threading import Thread
-from OlyPacket import OlyPacket
+from RtspPacket import RtspPacket
 from ServerWorker import ServerWorker
 from Bootstrapper import Bootstrapper
 
-OLY_BUFFER_SIZE = 250
-OLY_PORT = 5555
+RTSP_BUFFER_SIZE = 250
+RTSP_PORT = 5555
 RTP_PORT = 6666
 
 PERIODIC_MONITORIZATION_TIME = 5 #segundos
@@ -22,7 +22,7 @@ class ServerLauncher:
     def __init__(self, bootstrapperAddress, movies):
         self.bootstrapperAddress = bootstrapperAddress
         self.UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        self.UDPServerSocket.bind(('',OLY_PORT))
+        self.UDPServerSocket.bind(('',RTSP_PORT))
         self.UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self.movies = movies
         self.sockets = {}
@@ -30,27 +30,27 @@ class ServerLauncher:
         self.ip = ""
 
     def send_hello_packet(self):
-        HelloPacket = OlyPacket()
+        HelloPacket = RtspPacket()
         HelloPacket = HelloPacket.encode(self.HELLO,[])
         self.UDPClientSocket.sendto(HelloPacket,self.bootstrapperAddress)
 
     def send_probe_packet(self):
         while True:
             # Cria mensagem de proba
-            ProbePacket = OlyPacket()
+            ProbePacket = RtspPacket()
             timestamp = datetime.now().strftime('%H:%M:%S.%f')
             data = [timestamp,self.ip]
             ProbePacket = ProbePacket.encode(self.PROBE,data)
             print("Mensagem de proba enviada")
 
             # Envia mensagem de proba para o rp
-            self.UDPClientSocket.sendto(ProbePacket,(self.rp,OLY_PORT))
+            self.UDPClientSocket.sendto(ProbePacket,(self.rp,RTSP_PORT))
             time.sleep(PERIODIC_MONITORIZATION_TIME)
     
     def receive_hello_packet(self):
-        bytesAddressPair = self.UDPServerSocket.recvfrom(OLY_BUFFER_SIZE)
+        bytesAddressPair = self.UDPServerSocket.recvfrom(RTSP_BUFFER_SIZE)
         msg = bytesAddressPair[0]
-        HRPacket = OlyPacket()
+        HRPacket = RtspPacket()
         HRPacket = HRPacket.decode(msg)
         if HRPacket.type == self.HELLORESPONSE:
             # Recebe RP do bootstrapper
@@ -73,19 +73,18 @@ class ServerLauncher:
         #Start Server Workers
         
         RTPPORT = RTP_PORT
-        OLYPORT = OLY_PORT 
+        RTSPPORT = RTSP_PORT 
         
-        ServerWorker(self.rp, self.movies[0], self.UDPServerSocket, RTPPORT).run()
+        ServerWorker(self.rp, self.movie[0], self.UDPServerSocket, RTPPORT).run()
         
+        for i in (1,len(self.movies)):
+            RTPPORT += 1 
+            RTSPPORT += 1
 
-        RTPPORT += 1 
-        OLYPORT += 1
+            UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+            UDPServerSocket.bind(('',RTSPPORT))
 
-        UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        UDPServerSocket.bind(('',OLYPORT))
-            
-
-        ServerWorker(self.rp, self.movies[1], UDPServerSocket, RTPPORT).run()
+            ServerWorker(self.rp, self.movies[i], UDPServerSocket, RTPPORT).run()
 
 
 

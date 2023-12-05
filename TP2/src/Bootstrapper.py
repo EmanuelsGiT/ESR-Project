@@ -1,5 +1,5 @@
 import socket
-from OlyPacket import *
+from RtspPacket import *
 from threading import Thread, Lock
 
 # Tabela quem mantém a informção à cerca de toda a topologia da overlay
@@ -75,7 +75,7 @@ class Bootstrapper:
         ip = bytesAddressPair[1][0]
         msg = bytesAddressPair[0]
 
-        HelloPacket = OlyPacket()
+        HelloPacket = RtspPacket()
         HelloPacket = HelloPacket.decode(msg)
 
         if HelloPacket.type==self.HELLO:
@@ -86,19 +86,19 @@ class Bootstrapper:
             data.append(ip)
             data.append(self.overlayTable.rp)
 
-            HelloResponsePack = OlyPacket()
+            HelloResponsePack = RtspPacket()
             HelloResponsePack = HelloResponsePack.encode(self.HELLORESPONSE,data)
 
-            self.olyClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-            self.olyClientSocket.sendto(HelloResponsePack,(ip,OLY_PORT))
+            self.rtspClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+            self.rtspClientSocket.sendto(HelloResponsePack,(ip,RTSP_PORT))
 
     # Bootstrapper listening
     def service_bootstrapper(self):
-       self.olyServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-       self.olyServerSocket.bind(('',OLY_PORT))
+       self.rtspServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+       self.rtspServerSocket.bind(('',RTSP_PORT))
 
        while(True):
-           bytesAddressPair = self.olyServerSocket.recvfrom(OLY_BUFFER_SIZE)
+           bytesAddressPair = self.rtspServerSocket.recvfrom(RTSP_BUFFER_SIZE)
 
             # Aqui chamamos um handler para interpretar a msg e agir de acordo
            thread = Thread(target=self.handler,args=[bytesAddressPair])

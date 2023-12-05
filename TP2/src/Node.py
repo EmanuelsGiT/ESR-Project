@@ -5,12 +5,12 @@ import os
 import pickle
 import random
 from datetime import datetime, date, timedelta
-from OlyPacket import *
+from RtspPacket import *
 from StreamTables import *
 from RtpPacket import RtpPacket
 
 RTP_BUFFER_SIZE = 20480
-OLY_PORT = 5555
+RTSP_PORT = 5555
 RTP_PORT = 6666
 MAX_DELTA = timedelta(days=1)
 MIN_DELTA = timedelta(milliseconds=200)
@@ -50,36 +50,37 @@ class Node:
     PAUSE = "PAUSE"
     TEARDOWN = "TEARDOWN"
 
-    def __init__(self, bootstrapperAddress, isRp, ports):
+    def __init__(self, bootstrapperAddress, isRp, nmovies):
         self.bootstrapperAddress = bootstrapperAddress
         self.rp = ""
         self.isRp = isRp
-        self.ports = ports
-        self.socketsOLY = {}
+        self.nmovies = nmovies
+        self.socketsRTSP = {}
         self.socketsRTP = {}
         self.streamsTable = {}
         self.neighbours = []
         self.lock = Lock()
 
-    def run(self):
+    def run(self):  
         print("--------------Node--------------")
         if self.isRp:
             self.route = Route("", MAX_DELTA, datetime.now().time())
 
         RTPPORT = RTP_PORT
-        OLYPORT = OLY_PORT
+        RTSPPORT = RTSP_PORT
 
-        Thread(target=self.service_OLY, args=(OLYPORT,)).start()
-        Thread(target=self.service_RTP, args=((RTPPORT,OLYPORT),)).start()
-        Thread(target=self.service_OLY, args=(OLYPORT+1,)).start()
-        Thread(target=self.service_RTP, args=((RTPPORT+1,OLYPORT+1),)).start()
+        for i in range(0,self.nmovies):
+            Thread(target=self.service_RTSP, args=(RTSPPORT,)).start()
+            Thread(target=self.service_RTP, args=((RTPPORT,RTSPPORT),)).start()
+            RTSPPORT+=1
+            RTPPORT+=1
 
 
-    def OLY_handler(self, bytesAddressPair, OLYPORT):
+    def RTSP_handler(self, bytesAddressPair, RTSPPORT):
         source = bytesAddressPair[1][0]
         msg = bytesAddressPair[0]
 
-        Packet = OlyPacket()
+        Packet = RtspPacket()
         Packet = Packet.decode(msg)
 
         # Pacote Hello Response
@@ -114,20 +115,20 @@ class Node:
             if updated:
                 print("Updated Route")
                 if (
-                    old_source != new_source and self.streamsTable[OLYPORT].status == "open"
-                ):  # TODO
+                    old_source != new_source and self.streamsTable[RTSPPORT].status == "open"
+                ):  
                     print("Updated Source")
-                    SetupPacket = OlyPacket()
+                    SetupPacket = RtspPacket()
                     SetupPacket = SetupPacket.encode("SETUP", [])
-                    self.olyClientSocket.sendto(SetupPacket, (new_source, OLYPORT))
+                    self.rtspClientSocket.sendto(SetupPacket, (new_source, RTSPPORT))
 
-                    PlayPacket = OlyPacket()
+                    PlayPacket = RtspPacket()
                     PlayPacket = PlayPacket.encode("PLAY", [])
-                    self.olyClientSocket.sendto(PlayPacket, (new_source, OLYPORT))
+                    self.rtspClientSocket.sendto(PlayPacket, (new_source, RTSPPORT))
 
-                    TDNPacket = OlyPacket()
+                    TDNPacket = RtspPacket()
                     TDNPacket = TDNPacket.encode("TEARDOWN", [])
-                    self.olyClientSocket.sendto(TDNPacket, (old_source, OLYPORT))
+                    self.rtspClientSocket.sendto(TDNPacket, (old_source, RTSPPORT))
 
             self.lock.release()
         else:
@@ -138,11 +139,10 @@ class Node:
 
             data = Packet.payload
             port = data[0]
-            # source_ip = data
             route = data[1:]
             route.append(self.ip)
 
-            oly = OlyPacket()
+            rtsp = RtspPacket()
             new_data = data
             if not self.isRp:
                 new_data.append(self.ip)
@@ -152,25 +152,25 @@ class Node:
                 self.lock.acquire()
                 # Preciso implementar mensagens de proba para conseguirmos saber isto
                 # Adicionar um fluxo à routing table falta passar o dest (novo vizinho a qual o novo atual passa stream)
-                firstStream = self.streamsTable[OLYPORT].is_empty()
-                self.streamsTable[OLYPORT].add_stream(port, route[0], route)  # o destino da stream é a source de quem fez o pedido
+                firstStream = self.streamsTable[RTSPPORT].is_empty()
+                self.streamsTable[RTSPPORT].add_stream(port, route[0], route)  # o destino da stream é a source de quem fez o pedido
 
                 if firstStream:
-                    oly = oly.encode(Packet.type, new_data)
-                    self.olyClientSocket.sendto(oly, (destination, OLYPORT))
+                    rtsp = rtsp.encode(Packet.type, new_data)
+                    self.rtspClientSocket.sendto(rtsp, (destination, RTSPPORT))
                     print("sending SETUP to " + destination)
                 self.lock.release()
 
             elif Packet.type == self.PLAY:
                 print("Fluxo ativo | destination: " + source)
                 self.lock.acquire()
-                oldStatus = self.streamsTable[OLYPORT].stream_table_status()
-                self.streamsTable[OLYPORT].open_stream(route[0])
-                newStatus = self.streamsTable[OLYPORT].stream_table_status()
+                oldStatus = self.streamsTable[RTSPPORT].stream_table_status()
+                self.streamsTable[RTSPPORT].open_stream(route[0])
+                newStatus = self.streamsTable[RTSPPORT].stream_table_status()
 
                 if oldStatus != newStatus:
-                    oly = oly.encode(Packet.type, new_data)
-                    self.olyClientSocket.sendto(oly, (destination, OLYPORT))
+                    rtsp = rtsp.encode(Packet.type, new_data)
+                    self.rtspClientSocket.sendto(rtsp, (destination, RTSPPORT))
                     print("sending PLAY to " + destination)
                 self.lock.release()
 
@@ -178,13 +178,13 @@ class Node:
                 print("Fluxo pausado | destination: " + source)
                 self.lock.acquire()
                 # Fecha o fluxo pois o nodo vizinhos(source_ip) não quer stream
-                oldStatus = self.streamsTable[OLYPORT].stream_table_status()
-                self.streamsTable[OLYPORT].close_stream(route[0])
-                newStatus = self.streamsTable[OLYPORT].stream_table_status()
+                oldStatus = self.streamsTable[RTSPPORT].stream_table_status()
+                self.streamsTable[RTSPPORT].close_stream(route[0])
+                newStatus = self.streamsTable[RTSPPORT].stream_table_status()
 
                 if oldStatus != newStatus:
-                    oly = oly.encode(Packet.type, new_data)
-                    self.olyClientSocket.sendto(oly, (destination, OLYPORT))
+                    rtsp = rtsp.encode(Packet.type, new_data)
+                    self.rtspClientSocket.sendto(rtsp, (destination, RTSPPORT))
                 self.lock.release()
 
             elif Packet.type == self.TEARDOWN:
@@ -192,26 +192,26 @@ class Node:
                 # Passar pacote ao próximo nodo
                 self.lock.acquire()
 
-                oldStatus = self.streamsTable[OLYPORT].stream_table_status()
+                oldStatus = self.streamsTable[RTSPPORT].stream_table_status()
                 # Remover fluxo da tabela de rotas
-                self.streamsTable[OLYPORT].delete_stream(route[0])
-                newStatus = self.streamsTable[OLYPORT].stream_table_status()
+                self.streamsTable[RTSPPORT].delete_stream(route[0])
+                newStatus = self.streamsTable[RTSPPORT].stream_table_status()
 
-                empty = self.streamsTable[OLYPORT].is_empty()
+                empty = self.streamsTable[RTSPPORT].is_empty()
 
                 if empty:
-                    oly = oly.encode(Packet.type, new_data)
-                    self.olyClientSocket.sendto(oly, (destination, OLYPORT))
+                    rtsp = rtsp.encode(Packet.type, new_data)
+                    self.rtspClientSocket.sendto(rtsp, (destination, RTSPPORT))
                 elif oldStatus != newStatus:
-                    oly = oly.encode(self.PAUSE, new_data)
-                    self.olyClientSocket.sendto(oly, (destination, OLYPORT))
+                    rtsp = rtsp.encode(self.PAUSE, new_data)
+                    self.rtspClientSocket.sendto(rtsp, (destination, RTSPPORT))
                 self.lock.release()
 
     def RTP_handler(self, args):
         
-        data, rtpClientSocket, OLYPORT = args
+        data, rtpClientSocket, RTSPPORT = args
         
-        openStreams = self.streamsTable[OLYPORT].get_streams()
+        openStreams = self.streamsTable[RTSPPORT].get_streams()
 
         self.lock.acquire()
         for stream in openStreams:
@@ -221,52 +221,52 @@ class Node:
             )
         self.lock.release()
 
-    # Listening for OlyPacket
-    def service_OLY(self, args):
+    # Listening for RtspPacket
+    def service_RTSP(self, args):
 
-        OLYPORT = args
-        self.streamsTable[OLYPORT] = StreamsTable()
+        RTSPPORT = args
+        self.streamsTable[RTSPPORT] = StreamsTable()
 
-        if OLYPORT == 5555:
-            self.olyServerSocket = socket.socket(
+        if RTSPPORT == 5555:
+            self.rtspServerSocket = socket.socket(
                 family=socket.AF_INET, type=socket.SOCK_DGRAM
             )
-            self.olyServerSocket.bind(("", OLYPORT))
+            self.rtspServerSocket.bind(("", RTSPPORT))
 
             # O nodo tem que mandar uma menssagem de registo
-            HelloPacket = OlyPacket()
+            HelloPacket = RtspPacket()
             HelloPacket = HelloPacket.encode(self.HELLO, "")
 
-            self.olyClientSocket = socket.socket(
+            self.rtspClientSocket = socket.socket(
                 family=socket.AF_INET, type=socket.SOCK_DGRAM
             )
-            self.olyClientSocket.sendto(
-                HelloPacket, (self.bootstrapperAddress, OLYPORT)
+            self.rtspClientSocket.sendto(
+                HelloPacket, (self.bootstrapperAddress, RTSPPORT)
             )
         else:
-            olyServerSocket = socket.socket(
+            rtspServerSocket = socket.socket(
                 family=socket.AF_INET, type=socket.SOCK_DGRAM
             )
-            olyServerSocket.bind(("", OLYPORT))
+            rtspServerSocket.bind(("", RTSPPORT))
 
-            self.socketsOLY[OLYPORT] = olyServerSocket
+            self.socketsRTSP[RTSPPORT] = rtspServerSocket
 
         while True:
 
-            if OLYPORT == 5555:
-                bytesAddressPair = self.olyServerSocket.recvfrom(OLY_BUFFER_SIZE)
+            if RTSPPORT == 5555:
+                bytesAddressPair = self.rtspServerSocket.recvfrom(RTSP_BUFFER_SIZE)
             else:
-                bytesAddressPair = self.socketsOLY[OLYPORT].recvfrom(OLY_BUFFER_SIZE)
+                bytesAddressPair = self.socketsRTSP[RTSPPORT].recvfrom(RTSP_BUFFER_SIZE)
 
             # Aqui chamamos um handler para interpretar a msg e agir de acordo
-            thread = Thread(target=self.OLY_handler, args=(bytesAddressPair, OLYPORT))
+            thread = Thread(target=self.RTSP_handler, args=(bytesAddressPair, RTSPPORT))
             thread.start()
 
         os._exit(0)
 
     def service_RTP(self, args):
 
-        RTPPORT,OLYPORT = args
+        RTPPORT,RTSPPORT = args
         rtpClientSocket = ""
         if RTPPORT == 6666:
             self.rtpServerSocket = socket.socket(
@@ -296,6 +296,6 @@ class Node:
             data = bytesAddressPair[0]
             print(data)
 
-            thread = Thread(target=self.RTP_handler, args=((data, rtpClientSocket, OLYPORT),))
+            thread = Thread(target=self.RTP_handler, args=((data, rtpClientSocket, RTSPPORT),))
             thread.start()
         os._exit(0)
