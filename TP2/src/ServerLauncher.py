@@ -9,6 +9,7 @@ from Bootstrapper import Bootstrapper
 
 OLY_BUFFER_SIZE = 250
 OLY_PORT = 5555
+RTP_PORT = 6666
 
 PERIODIC_MONITORIZATION_TIME = 5 #segundos
 
@@ -18,19 +19,20 @@ class ServerLauncher:
     HELLO = "HELLO"
     HELLORESPONSE = "HELLORESPONSE"
 
-    def __init__(self, bootstrapperAddressPort, movies):
-        self.bootstrapperAddressPort = bootstrapperAddressPort
+    def __init__(self, bootstrapperAddress, movies):
+        self.bootstrapperAddress = bootstrapperAddress
         self.UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self.UDPServerSocket.bind(('',OLY_PORT))
         self.UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self.movies = movies
+        self.sockets = {}
         self.rp = ""
         self.ip = ""
 
     def send_hello_packet(self):
         HelloPacket = OlyPacket()
         HelloPacket = HelloPacket.encode(self.HELLO,[])
-        self.UDPClientSocket.sendto(HelloPacket,self.bootstrapperAddressPort)
+        self.UDPClientSocket.sendto(HelloPacket,self.bootstrapperAddress)
 
     def send_probe_packet(self):
         while True:
@@ -69,4 +71,21 @@ class ServerLauncher:
         Thread(target=self.send_probe_packet).start() 
 
         #Start Server Workers
-        ServerWorker(self.rp, self.movies[0], self.UDPServerSocket).run()
+        
+        RTPPORT = RTP_PORT
+        OLYPORT = OLY_PORT 
+        
+        ServerWorker(self.rp, self.movies[0], self.UDPServerSocket, RTPPORT).run()
+        
+
+        RTPPORT += 1 
+        OLYPORT += 1
+
+        UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+        UDPServerSocket.bind(('',OLYPORT))
+            
+
+        ServerWorker(self.rp, self.movies[1], UDPServerSocket, RTPPORT).run()
+
+
+

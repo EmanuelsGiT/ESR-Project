@@ -11,9 +11,9 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     nArgs = len(args)
 
-    if nArgs==2:
+    if nArgs < 10:
         bootstrapperAdress = args[1]
-        bootstrapperAdressPort = (bootstrapperAdress,OLY_PORT)
+        bootstrapperAdressPort = bootstrapperAdress
         # Iniciar bootstrapper:
         # oNode -bs <config_file>
         if args[0]=="-bs":
@@ -24,19 +24,18 @@ if __name__ == "__main__":
             # Adicionar novo nodo à overlay:
             # oNode -n <bootstrapper_adress>
             isRp = False
-            node = Node(bootstrapperAdressPort, isRp)
+            ports = args[2:]
+            node = Node(bootstrapperAdressPort, isRp, ports)
             node.run()
         elif args[0]=="-rp":
             # Adicionar novo nodo à overlay:
             # oNode -n <bootstrapper_adress>
             isRp = True
-            node = Node(bootstrapperAdressPort, isRp)
+            ports = args[2:]
+            node = Node(bootstrapperAdressPort, isRp,ports)
             node.run()
-        else: 
-            print("ERROR")
 
-    elif nArgs==3:
-        if args[0]=="-s":
+        elif args[0]=="-s":
             bootstrapperAdress = args[1]
             bootstrapperAdressPort = (bootstrapperAdress,OLY_PORT)
             movies = args[2:]
@@ -49,8 +48,9 @@ if __name__ == "__main__":
             bootstrapperAdressPort = (bootstrapperAdress,OLY_PORT)
             # Adicionar novo cliente à overlay:
             # oNode -c <bootstrapper_adress>
-            movie = args[2]
-            client = ClientLauncher(bootstrapperAdressPort, movie)
+            port = args[2]
+            oly_port = args[3]
+            client = ClientLauncher(bootstrapperAdressPort, port, oly_port)
             client.run()
         else:
              print("ERROR")

@@ -5,8 +5,6 @@ from OlyPacket import OlyPacket
 from VideoStream import VideoStream
 from RtpPacket import RtpPacket
 
-RTP_PORT = 9999
-
 class ServerWorker:
 	#RTSP messages
 	SETUP = 'SETUP'
@@ -28,11 +26,12 @@ class ServerWorker:
 	FILE_NOT_FOUND_404 = 1
 	CON_ERR_500 = 2
 
-	def __init__(self,rpAddress, filename, olySocket):
+	def __init__(self,rpAddress, filename, olySocket, RTPPORT):
 		"""Server Worker initialization"""
 		self.clientInfo = {}
+		self.RTPPORT = RTPPORT
 		# Endereço e porta de atendimento do vizinho do servidor
-		self.rpAddressPort = (rpAddress,RTP_PORT)
+		self.rpAddressPort = (rpAddress,RTPPORT)
 		try:
 			self.clientInfo['videoStream'] = VideoStream(filename)
 		except IOError:
@@ -70,6 +69,7 @@ class ServerWorker:
 				print("processing SETUP\n")
 				# Create a new socket for RTP/UDP
 				self.clientInfo["rtpSocket"] = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+				self.clientInfo["rtpSocket"].bind(('',self.RTPPORT))
 				self.state = self.READY
 		# Process PLAY request
 		elif requestType == self.PLAY:
@@ -115,7 +115,7 @@ class ServerWorker:
 		extension = 0
 		cc = 0
 		marker = 0
-		pt = 26 # MJPEG type
+		pt = 96 # MJPEG type
 		seqnum = frameNbr
 		ssrc = 0
 

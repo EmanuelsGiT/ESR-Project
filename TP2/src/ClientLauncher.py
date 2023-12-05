@@ -14,9 +14,10 @@ class ClientLauncher:
     HELLO = "HELLO"
     HELLORESPONSE = "HELLORESPONSE"
 
-    def __init__(self,bootstrapperAdressPort, movie):
+    def __init__(self,bootstrapperAdressPort, port, oly_port):
         self.bootstrapperAdressPort = bootstrapperAdressPort
-        self.movie = movie
+        self.port = port
+        self.oly_port = oly_port
         self.ip = ""
         self.neighbour = ""
         
@@ -49,7 +50,7 @@ class ClientLauncher:
 
     def launch_client(self):
         app = QApplication(sys.argv)# ????
-        client = Client(self.movie, self.ip, self.neighbour,self.UDPServerSocket)
+        client = Client(self.oly_port, self.port, self.ip, self.neighbour,self.UDPServerSocket)
         client.resize(400, 300)
         client.show()
         sys.exit(app.exec_())
