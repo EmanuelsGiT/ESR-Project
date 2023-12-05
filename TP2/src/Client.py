@@ -12,8 +12,8 @@ import socket, threading, os
 from RtpPacket import RtpPacket
 from OlyPacket import OlyPacket
 
-RTP_PORT = 9999
-OLY_PORT = 5555
+#RTP_PORT = 9999
+#OLY_PORT = 5555
 RTP_BUFFER_SIZE = 20480
 
 class Client(QMainWindow):
@@ -32,13 +32,13 @@ class Client(QMainWindow):
 	PAUSE = 'PAUSE'
 	TEARDOWN = 'TEARDOWN'
 	# ip = client, server adress no vizinho
-	def __init__(self, movie, ip, serverAddress,rtspSocket,parent=None):
+	def __init__(self, oly_port, port, ip, serverAddress,rtspSocket,parent=None):
 		"""Client initialization"""
 		#self.master.protocol("WM_DELETE_WINDOW", self.handler)
 		super(Client, self).__init__(parent)
 		self.ip = ip
-		self.movie = movie
-		self.rtspAddressPort = (serverAddress, OLY_PORT)
+		self.port = int(port)
+		self.rtspAddressPort = (serverAddress, int(oly_port))
 		self.rtspSocket = rtspSocket
 		self.rtspSeq = 0
 		self.requestSent = -1
@@ -142,9 +142,9 @@ class Client(QMainWindow):
 					currFrameNbr = rtpPacket.seqNum()
 					print("Current Seq Num: " + str(currFrameNbr))
 
-					if currFrameNbr > self.frameNbr: # Discard the late packet
-						self.frameNbr = currFrameNbr
-						self.updateMovie(rtpPacket.getPayload())
+					#if currFrameNbr > self.frameNbr: # Discard the late packet
+					#self.frameNbr = currFrameNbr
+					self.updateMovie(rtpPacket.getPayload())
 			except:
 				# Stop listening upon requesting PAUSE or TEARDOWN
 				if self.playEvent.isSet():
@@ -214,13 +214,12 @@ class Client(QMainWindow):
 
 
 		request = OlyPacket()
-		data = [self.movie]
+		data = [self.port]
 		data.append(self.ip)
 		request = request.encode(type_request,data)
-		print("req clie")
-		print(request)
 
 		# Send the RTSP request using rtspSocket.
+		print(self.rtspAddressPort)
 		self.rtspSocket.sendto(request,self.rtspAddressPort)
 			
 
@@ -235,8 +234,8 @@ class Client(QMainWindow):
 
 		try:
 			# Bind the socket to the address using the RTP port given by the client user
-			self.rtpSocket.bind(('',RTP_PORT))
+			self.rtpSocket.bind(('',self.port))
 			print('\nBind \n')
 		except Exception as e:
 			self.error_label.setText(f'Unable to Bind', '%s' %e)
-			self.error_label.setText(f'Unable to Bind', 'Unable to bind PORT=%d' %RTP_PORT)
+			self.error_label.setText(f'Unable to Bind', 'Unable to bind PORT=%d' %self.port)
