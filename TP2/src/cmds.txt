@@ -1,0 +1,11 @@
+python3 oNode.py -bs tests/conf.txt
+
+python3 oNode.py -rp 10.0.21.10 2
+
+python3 oNode.py -n 10.0.21.10 2
+
+python3 oNode.py -c 10.0.21.10 6666 5555
+
+python3 oNode.py -c 10.0.21.10 6667 5556
+
+python3 oNode.py -s 10.0.21.10 videos/gtaVI.mp4 videos/gtaV.mp4 

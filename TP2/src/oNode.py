@@ -20,6 +20,14 @@ if __name__ == "__main__":
             print("------------Bootstrapper------------")
             bootstrapper = Bootstrapper(args[1])
             bootstrapper.run()
+    elif args[0]=="-s":
+        bootstrapperAdress = args[1]
+        bootstrapperAdressPort = (bootstrapperAdress,RTSP_PORT)
+        movies = args[2:]
+        # Adicionar novo server à overlay:
+        # oNode -s <bootstrapper_adress> movie1 ...
+        server = ServerLauncher(bootstrapperAdressPort, movies)
+        server.run()
 
     elif nArgs == 3: 
         bootstrapperAdress = args[1]
@@ -49,13 +57,4 @@ if __name__ == "__main__":
             client = ClientLauncher(bootstrapperAdressPort, rtp_port, rtsp_port)
             client.run()
 
-    elif nArgs > 4 and args[0]=="-s":
-        bootstrapperAdress = args[1]
-        bootstrapperAdressPort = (bootstrapperAdress,RTSP_PORT)
-        movies = args[2:]
-        # Adicionar novo server à overlay:
-        # oNode -s <bootstrapper_adress> movie1 ...
-        server = ServerLauncher(bootstrapperAdressPort, movies)
-        server.run()
-        
     else: print("ERROR: Invalid Args")

@@ -62,14 +62,16 @@ class Node:
         self.lock = Lock()
 
     def run(self):  
-        print("--------------Node--------------")
         if self.isRp:
+            print("---------------RP---------------")
             self.route = Route("", MAX_DELTA, datetime.now().time())
-
+        else:
+            print("--------------Node--------------")
+        
         RTPPORT = RTP_PORT
         RTSPPORT = RTSP_PORT
 
-        for i in range(0,self.nmovies):
+        for i in range(0,int(self.nmovies)):
             Thread(target=self.service_RTSP, args=(RTSPPORT,)).start()
             Thread(target=self.service_RTP, args=((RTPPORT,RTSPPORT),)).start()
             RTSPPORT+=1
@@ -294,7 +296,6 @@ class Node:
                 bytesAddressPair = self.socketsRTP[RTPPORT].recvfrom(RTP_BUFFER_SIZE)
 
             data = bytesAddressPair[0]
-            print(data)
 
             thread = Thread(target=self.RTP_handler, args=((data, rtpClientSocket, RTSPPORT),))
             thread.start()

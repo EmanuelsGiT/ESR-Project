@@ -75,9 +75,9 @@ class ServerLauncher:
         RTPPORT = RTP_PORT
         RTSPPORT = RTSP_PORT 
         
-        ServerWorker(self.rp, self.movie[0], self.UDPServerSocket, RTPPORT).run()
+        ServerWorker(self.rp, self.movies[0], self.UDPServerSocket, RTPPORT).run()
         
-        for i in (1,len(self.movies)):
+        for i in (1,len(self.movies)-1):
             RTPPORT += 1 
             RTSPPORT += 1
 

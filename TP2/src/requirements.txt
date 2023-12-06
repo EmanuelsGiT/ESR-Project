@@ -1,3 +1,4 @@
-Pillow==8.1.1
-PyQt5==5.13.1
-PyQt5-sip==12.7.0
+Pillow
+PyQt5
+PyQt5-sip
+opencv-python

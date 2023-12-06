@@ -219,7 +219,6 @@ class Client(QMainWindow):
 		request = request.encode(type_request,data)
 
 		# Send the RTSP request using rtspSocket.
-		print(self.rtspAddressPort)
 		self.rtspSocket.sendto(request,self.rtspAddressPort)
 			
 
